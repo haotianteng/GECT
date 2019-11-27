@@ -69,6 +69,8 @@ class Trainer(object):
     def train(self,epoches,optimizer,save_cycle,save_folder):
         self.net.to(self.device)
         self.save_folder = save_folder
+        train_record = []
+        valid_record = []
         for epoch_i in range(epoches):
             for i_batch, batch in enumerate(self.train_ds):
                 if i_batch%save_cycle==0:
@@ -82,9 +84,14 @@ class Trainer(object):
                     self.save()
                     eval_i,valid_batch = next(enumerate(self.eval_ds))
                     valid_error = self.valid_step(valid_batch)
-                    print("Epoch %d Batch %d, loss %f, error %f, valid_error %f"%(epoch_i, i_batch, loss,np.mean(error),np.mean(valid_error)))
+                    mean_error = np.mean(error)
+                    mean_valid_error = np.mean(valid_error)
+                    print("Epoch %d Batch %d, loss %f, error %f, valid_error %f"%(epoch_i, i_batch, loss,mean_error,mean_valid_error))
+                    train_record.append(mean_error)
+                    valid_record.append(mean_valid_error)
                 optimizer.step()
                 self.global_step +=1
+        return train_record,valid_record
     def train_step(self,batch,get_error = False):
         """Training step
         Input Args:

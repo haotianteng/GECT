@@ -13,6 +13,8 @@ import numpy as np
 import torch
 import os 
 from torch.utils import data
+from matplotlib import pyplot as plt
+
 
 class EmbeddingTrainer(Trainer):
     """EmbeddingTrainer
@@ -61,10 +63,12 @@ class EmbeddingTrainer(Trainer):
 
 if __name__ == "__main__":
     root_dir = '/home/heavens/CMU/GECT/'
-    train_dat = os.path.join(root_dir,"data/train_data.h5")
+    train_dat = os.path.join(root_dir,"data/all_data.h5")
     eval_dat = os.path.join(root_dir,"data/test_data.h5")
+#    train_dat = os.path.join(root_dir,'data/partial_gene.h5')
+#    eval_dat = os.path.join(root_dir,'data/partial_gene.h5')
     test_model = os.path.join(root_dir,"gect/embedding_model/")
-    drop_prob = 0.8
+    drop_prob = 0.9
     learning_rate = 1e-3
     epoches = 100
     global_step = 0
@@ -98,5 +102,12 @@ if __name__ == "__main__":
 #    except FileNotFoundError:
 #        print("Model checkpoint file not found.")
 #        pass
-    t.train(epoches,optimizer,COUNT_CYCLE,test_model)
+    train_record,valid_record = t.train(epoches,optimizer,COUNT_CYCLE,test_model)
+    
+    train_step = np.arange(0,epoches*len(d1),batch_size*COUNT_CYCLE)
+    fig_h = plt.figure()
+    axes = fig_h.add_axes([0.1,0.1,0.8,0.8])
+    line1 = axes.plot(train_step,train_record,'r',label = 'train error')
+    line2 = axes.plot(train_step,valid_record,'b',label = 'valid error')
+    axes.legend()
     t.save(test_model)
