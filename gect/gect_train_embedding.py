@@ -51,11 +51,12 @@ class EmbeddingTrainer(Trainer):
     def train_step(self,batch,get_error = False):
         feature_batch = batch['feature']
         feature_n = feature_batch.shape[1]
-        output_mask = np.random.choice(2,feature_n,p = [self.output_drop, 1-self.output_drop])
-        output_mask = np.asarray(output_mask,dtype = gi.FEATURE_DTYPE)
-        output_mask = torch.from_numpy(output_mask).expand_as(feature_batch).to(self.device)
+#        output_mask = np.random.choice(2,feature_n,p = [self.output_drop, 1-self.output_drop])
+#        output_mask = np.asarray(output_mask,dtype = gi.FEATURE_DTYPE)
+#        output_mask = torch.from_numpy(output_mask).expand_as(feature_batch).to(self.device)
         out = self.net.forward(feature_batch,training = True)
-        loss = self.net.loss(out*output_mask,feature_batch*output_mask)
+#        loss = self.net.loss(out*output_mask,feature_batch*output_mask)
+        loss = self.net.loss(out,feature_batch)
         error = None
         if get_error:
             error = self.net.error(out,feature_batch)
@@ -63,13 +64,14 @@ class EmbeddingTrainer(Trainer):
 
 if __name__ == "__main__":
     root_dir = '/home/heavens/CMU/GECT/'
-    train_dat = os.path.join(root_dir,"data/all_data.h5")
-    eval_dat = os.path.join(root_dir,"data/test_data.h5")
+    data_dir = '/home/heavens/CMU/GECT/data'
+    train_dat = os.path.join(data_dir,"all_data.h5")
+    eval_dat = os.path.join(data_dir,"test_data.h5")
 #    train_dat = os.path.join(root_dir,'data/partial_gene.h5')
 #    eval_dat = os.path.join(root_dir,'data/partial_gene.h5')
     test_model = os.path.join(root_dir,"gect/embedding_model/")
     drop_prob = 0.9
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     epoches = 100
     global_step = 0
     COUNT_CYCLE = 10

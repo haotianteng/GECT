@@ -39,8 +39,10 @@ class GeneEmbedding(nn.Module):
              Out: Reconstruction matrix with the shape [Batch_size,Segment_length]
         """
         feature = nn.functional.dropout(feature, p=self.dropout_prob,training = training)
-        for layer in self.net:
-            feature = layer(feature)
+#        for layer in self.net:
+#            feature = layer(feature)
+        feature = self.linear1(feature)
+        feature = torch.matmul(feature,self.linear1.weight)
         return feature
     
     def loss(self, predict, target):
