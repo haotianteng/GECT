@@ -12,7 +12,9 @@ class dataset(data.Dataset):
     """
     scRNA sequencing dataset, contain gene expression and cell type.
     """
-    def __init__(self, store_file, transform=None):
+    def __init__(self, 
+                 store_file, 
+                 transform=None):
         """
         Args:
             data_file (string): Path to the pandas hdf5 data storage file(contain
@@ -22,15 +24,17 @@ class dataset(data.Dataset):
         """
         store_f = pd.HDFStore(store_file)
         self.feature = np.asarray(store_f[FEATURE_ENTRY],dtype = FEATURE_DTYPE)
+        self.gene_n = self.feature.shape[1]
         self.transform = transform
         labels = store_f[LABEL_ENTRY]
         self.label_tags = np.unique(labels)
         for tag_idx,tag in enumerate(self.label_tags):
             labels[labels==tag] = tag_idx
         self.sample_n = len(labels)
-        self.labels = np.reshape(np.asarray(labels,dtype = np.int32),newshape = (self.sample_n,1))
+        self.labels = np.reshape(np.asarray(labels,dtype = np.int64),newshape = (self.sample_n,1))
         self.gene_mean = np.mean(self.feature,axis = 0)
         self.gene_std = np.std(self.feature,axis = 0) + EPSILON
+        self.cell_type_n = len(self.label_tags)
         store_f.close()
     def __len__(self):
         return self.sample_n
@@ -38,6 +42,7 @@ class dataset(data.Dataset):
     def __getitem__(self, idx):
         item = {'feature': self.feature[idx],
                 'label': self.labels[idx],
+                'label_tags': self.label_tags,
                 'feature_mean':self.gene_mean,
                 'feature_std':self.gene_std}
         if self.transform:
@@ -51,26 +56,35 @@ class MeanNormalization(object):
         feature = item['feature'] - item['feature_mean']
         feature = feature/item['feature_std']
         return {'feature':feature,
-                'label':item['label']}
-        
-class Crop(object):
-    """Crop some feature
-    """
-    pass
+                'label':item['label'],
+                'label_tags':item['label_tags']}
 
-class ToTensor(object):
-    def __call__(self, item):
-        return {'feature':torch.from_numpy(item['feature']),
-                'label':torch.from_numpy(item['label'])}
+class OnehotEncoding(object):
+    """Encoding the label with one-hot vector, unneccassory as PyTorch CELoss
+    do the OneHotEncoding internally.
+    """
+    def __call__(self,sample):
+        label_idx = sample['label']
+        label = np.zeros(len(sample['label_tags']))
+        label[label_idx] = 1
+        return {'feature':sample['feature'],
+                'label':label}
 
 class Embedding(object):
-    """
+    """Transfer the gene expression level into embedding vector
     """
     def __init__(self,embedding_matrix):
         self.embedding = embedding_matrix
     def __call__(self,sample):
         feature = sample['feature']
-        ##TODO implemented the embedding
+        feature = np.matmul(feature,self.embedding)
+        return {'feature':feature,
+                'label':sample['label']}
+
+class ToTensor(object):
+    def __call__(self, item):
+        return {'feature':torch.from_numpy(item['feature']),
+                'label':torch.from_numpy(item['label']).squeeze()}
   
 class DeviceDataLoader():
     """Wrap a dataloader to move data to a device"""

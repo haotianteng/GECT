@@ -97,7 +97,8 @@ class Trainer(object):
         Input Args:
             batch: A input batch of data.
             get_error: If the error valid step going to be calculated.
-        The train step is reimplemented according to different requirement.
+        The train step is reimplemented according to different requirement in 
+        gect_train_embedding and gect_train_ct module.
         """
         pass
     
