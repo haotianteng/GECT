@@ -67,8 +67,8 @@ def train_wrapper(args):
     batch_size = args.batch_size
     d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.MeanNormalization(),
                                                             gi.ToTensor()]))
-    d2 = gi.dataset(eval_dat,transform=transforms.Compose([gi.MeanNormalization(),
-                                                           gi.ToTensor()]))
+    d2 = gi.dataset(eval_dat,transform=transforms.Compose([ gi.MeanNormalization(),
+                                                            gi.ToTensor()]))
     assert(d1.feature.shape[1] == d2.feature.shape[1])
     device = args.device
     dataloader = gi.DeviceDataLoader(data.DataLoader(d1,batch_size=batch_size,shuffle=True,num_workers=5),device = device)
@@ -140,7 +140,7 @@ if __name__ == "__main__":
            '-t',
            '--step-rate',
            help='Step rate',
-           default=1e-4,
+           default=1e-1,
            type=float)
    parser.add_argument(
            '-d',

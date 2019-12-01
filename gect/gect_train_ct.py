@@ -74,7 +74,7 @@ global_step = 0
 COUNT_CYCLE = 10
 root_dir = '/home/heavens/CMU/GECT/'
 data_dir = '/home/heavens/CMU/GECT/data'
-train_dat = os.path.join(data_dir,"all_data.h5")
+train_dat = os.path.join(data_dir,"train_data.h5")
 eval_dat = os.path.join(data_dir,"test_data.h5")
 
 embedding_model = os.path.join(root_dir,"gect/embedding_model/")
