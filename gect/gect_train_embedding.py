@@ -97,6 +97,7 @@ def train_wrapper(args):
     axes.plot(train_step,train_record,'r',label = 'train error')
     axes.plot(train_step,valid_record,'b',label = 'valid error')
     axes.legend()
+    plt.savefig(os.path.join(test_model,'train_record.png'))
     t.save(test_model)
     
 if __name__ == "__main__":
