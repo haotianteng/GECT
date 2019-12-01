@@ -21,7 +21,10 @@ class Trainer(object):
             device: The device to put the model on, can be cpu or cuda, if None then gpu will be used if available.
         """
         self.train_ds = train_dataloader
-        self.device = self._get_device(device)
+        if (type(device) is str) or (device is None):
+            self.device = self._get_device(device)
+        elif type(device) is torch.device:
+            self.device = device
         if eval_dataloader is None:
             self.eval_ds = self.train_ds
         else:

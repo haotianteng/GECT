@@ -59,6 +59,18 @@ class MeanNormalization(object):
                 'label':item['label'],
                 'label_tags':item['label_tags']}
 
+class ToTags(object):
+    """Transfer label using given tags.
+    """
+    def __init__(self,tags):
+        self.tags = tags
+    def __call__(self,sample):
+        label = sample['label']
+        label_tags = sample['label_tags']
+        new_label = np.where(self.tags==label_tags[label[0]])[0]
+        return {'feature':sample['feature'],
+                'label':new_label,
+                'label_tags':label_tags}
 class OnehotEncoding(object):
     """Encoding the label with one-hot vector, unneccassory as PyTorch CELoss
     do the OneHotEncoding internally.
@@ -80,7 +92,8 @@ class Embedding(object):
         feature = np.matmul(feature,self.embedding)
         return {'feature':feature,
                 'label':sample['label']}
-
+        
+        
 class ToTensor(object):
     def __call__(self, item):
         return {'feature':torch.from_numpy(item['feature']),

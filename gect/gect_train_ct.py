@@ -57,7 +57,7 @@ class CellTypingTrainer(Trainer):
     def train_step(self,batch,get_error = False):
         feature_batch = batch['feature']
         label_batch = batch['label']
-        out = self.net.forward(feature_batch,training = True)
+        out = self.net.forward(feature_batch)
         loss = self.net.loss(out,label_batch)
         if get_error:
             error = self.net.error(out,label_batch)
@@ -67,26 +67,24 @@ class CellTypingTrainer(Trainer):
 
 batch_size = 200
 device = "cuda"
-net_structure = [400,400,200,200,100,100]
+net_structure = [200,200,100,100]
 learning_rate = 4e-3
 epoches = 100
 global_step = 0
 COUNT_CYCLE = 10
-
-
 root_dir = '/home/heavens/CMU/GECT/'
 data_dir = '/home/heavens/CMU/GECT/data'
 train_dat = os.path.join(data_dir,"all_data.h5")
 eval_dat = os.path.join(data_dir,"test_data.h5")
-#    train_dat = os.path.join(root_dir,'data/partial_gene.h5')
-#    eval_dat = os.path.join(root_dir,'data/partial_gene.h5')
+
 embedding_model = os.path.join(root_dir,"gect/embedding_model/")
 embedding = load_embedding(embedding_model)
-test_model = os.path.join(root_dir,"gect/cell_classifier/")
+test_model = os.path.join(root_dir,"gect/cell_classifier2/")
 d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.MeanNormalization(),
                                                         gi.Embedding(embedding),
                                                         gi.ToTensor()]))
 d2 = gi.dataset(eval_dat,transform=transforms.Compose([gi.MeanNormalization(),
+                                                       gi.ToTags(d1.label_tags),
                                                         gi.Embedding(embedding),
                                                         gi.ToTensor()]))
 assert(d1.feature.shape[1] == d2.feature.shape[1])
@@ -123,19 +121,19 @@ trainer.save(test_model)
 
 
 ### Paint first 2 principle components
-from sklearn.decomposition import PCA
-for i_batch, sample_batched in enumerate(dataloader):
-    feature = sample_batched['feature']
-    label = sample_batched['label']
-    break
-feature = feature.detach().cpu().numpy()
-norm_f = feature - np.mean(feature,axis=0,keepdims = True)
-pca = PCA(n_components = 3)
-transformed_f = pca.fit_transform(norm_f)
-label_int = np.asarray([np.where(x==1)[0][0] for x in label.detach().cpu().numpy()])
-cell_type_sample = 5
-color_palette = sns.color_palette("deep", 5)
-transformed_f = transformed_f[label_int<5]
-label_int = label_int[label_int<5]
-for sample_idx,sample in enumerate(transformed_f):
-    plt.plot(sample[1],sample[2],'.',color = color_palette[label_int[sample_idx]])
+#from sklearn.decomposition import PCA
+#for i_batch, sample_batched in enumerate(dataloader):
+#    feature = sample_batched['feature']
+#    label = sample_batched['label']
+#    break
+#feature = feature.detach().cpu().numpy()
+#norm_f = feature - np.mean(feature,axis=0,keepdims = True)
+#pca = PCA(n_components = 3)
+#transformed_f = pca.fit_transform(norm_f)
+#label_int = np.asarray([np.where(x==1)[0][0] for x in label.detach().cpu().numpy()])
+#cell_type_sample = 5
+#color_palette = sns.color_palette("deep", 5)
+#transformed_f = transformed_f[label_int<5]
+#label_int = label_int[label_int<5]
+#for sample_idx,sample in enumerate(transformed_f):
+#    plt.plot(sample[1],sample[2],'.',color = color_palette[label_int[sample_idx]])
