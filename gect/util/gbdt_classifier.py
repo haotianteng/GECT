@@ -37,7 +37,7 @@ eval_dat = os.path.join(data_dir,"test_data.h5")
 
 embedding_model = os.path.join(root_dir,"gect/embedding_model/")
 embedding = gi.load_embedding(embedding_model)
-test_model = os.path.join(root_dir,"gect/gbdt2/")
+test_model = os.path.join(root_dir,"gect/gbdt_10cell_0/")
 d_full = gi.dataset(all_dat,transform=transforms.Compose([gi.ToTensor()]))
 d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.ToTags(d_full.label_tags),
                                                         gi.Embedding(embedding),
@@ -67,24 +67,25 @@ lgb_eval = lgb.Dataset(x_sub_test, y_sub_test, reference=lgb_train)
 params = {
     'boosting_type': 'gbdt',
     'objective': 'multiclass',
-    'num_leaves': 31,
+    'num_leaves': 63,
     'learning_rate': 0.01,
     'feature_fraction': 0.9,
     'bagging_fraction': 0.8,
     'bagging_freq': 5,
     'verbose': 1,
     'max_depth':-1,
-    'min_child_samples': 20,
-    'num_class':sub_cell_n
+    'min_child_samples': 10,
+    'num_class':sub_cell_n,
+    'max_bin':1024
 }
 
 print('Starting training...')
 # train
 gbm = lgb.train(params,
                 lgb_train,
-                num_boost_round=2000,
+                num_boost_round=20000,
                 valid_sets=lgb_eval,
-                early_stopping_rounds=20)
+                early_stopping_rounds=50)
 
 print('Saving model...')
 # save model to file
