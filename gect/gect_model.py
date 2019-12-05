@@ -81,7 +81,6 @@ class CellClassifier(nn.Module):
         setattr(self,'out_linear',nn.Linear(current_n,cell_n,bias = True))
         self.net['out_linear'] = getattr(self,'out_linear')
         self.CEloss = nn.CrossEntropyLoss()
-        
     def forward(self, feature,training = True):
         """The formward step for the afterward segment input.
         Args:
@@ -93,8 +92,9 @@ class CellClassifier(nn.Module):
         for layer_idx in np.arange(len(self.hidden_ns)):
             branch1 = self.net['linear'+str(layer_idx)](feature)
             branch1 = tanh(branch1)
-            branch2 = self.net['skip'+str(layer_idx)](feature)
-            feature = branch1 + branch2
+#            branch2 = self.net['skip'+str(layer_idx)](feature)
+#            feature = branch1 + branch2
+            feature = branch1
         feature = self.net['out_linear'](feature)
         return feature
     
@@ -105,7 +105,7 @@ class CellClassifier(nn.Module):
         loss = self.CEloss(predict,target)
         loss = torch.mean(loss)
         return loss
-    
+        
     def error(self, predict, target):
         predict = predict.argmax(1)
         compare = (predict == target)

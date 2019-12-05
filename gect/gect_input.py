@@ -3,6 +3,7 @@ import torch
 import pandas as pd
 import numpy as np
 from torchvision import transforms
+import os
 
 FEATURE_ENTRY = 'rpkm'
 LABEL_ENTRY = 'labels'
@@ -22,7 +23,7 @@ class dataset(data.Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        store_f = pd.HDFStore(store_file)
+        store_f = pd.HDFStore(store_file,'r')
         self.feature = np.asarray(store_f[FEATURE_ENTRY],dtype = FEATURE_DTYPE)
         self.gene_n = self.feature.shape[1]
         self.transform = transform
@@ -68,6 +69,7 @@ class ToTags(object):
         label = sample['label']
         label_tags = sample['label_tags']
         new_label = np.where(self.tags==label_tags[label[0]])[0]
+        assert(len(new_label)==1)
         return {'feature':sample['feature'],
                 'label':new_label,
                 'label_tags':label_tags}
@@ -133,6 +135,40 @@ class DeviceDataLoader():
             return torch.device('cuda')
         else:
             return torch.device('cpu')
+
+def cell_list(y, cell_n):
+    """Chooce cell_n cell types with most instances.
+    """
+    uniq,counts = np.unique(y,return_counts =True)
+    sub_cell_list = uniq[np.argsort(counts)]
+    sub_cell_list = sub_cell_list[-cell_n:]
+    return sub_cell_list
+
+def get_sub_data(x,y,sub_cell_list):
+    sub_cell_choice = y==sub_cell_list[0]
+    for t in sub_cell_list[1:]:
+        sub_cell_choice = np.logical_or(sub_cell_choice,y==t)
+    sub_x = x[sub_cell_choice]
+    sub_label = y[sub_cell_choice]
+    sub_y = np.copy(sub_label)
+    for idx,label in enumerate(sub_cell_list):
+        sub_y[sub_label==label] = idx
+    return sub_x,sub_y
+def transfer_label_tags(y,label_tags_from,label_tags_to):
+    labels = np.unique(y)
+    new_y = np.copy(y)
+    for label in labels:
+        new_y[y==label] = np.where(label_tags_to == label_tags_from[label])[0][0]
+    return new_y
+
+def load_embedding(model_folder):
+    ckpt_file = os.path.join(model_folder,'checkpoint') 
+    with open(ckpt_file,'r') as f:
+        latest_ckpt = f.readline().strip().split(':')[1]
+    state_dict = torch.load(os.path.join(model_folder,latest_ckpt))
+    embedding_matrix = state_dict['linear1.weight'].detach().cpu().numpy()
+    return embedding_matrix.transpose()
+
 
 if __name__ == "__main__":
     root_dir = '/home/heavens/CMU/GECT/data/'

@@ -69,9 +69,10 @@ class Trainer(object):
             self.global_step = int(latest_ckpt.split('-')[1])
         self.net.load_state_dict(torch.load(os.path.join(save_folder,latest_ckpt),map_location=self.device))
         
-    def train(self,epoches,optimizer,save_cycle,save_folder):
+    def train(self,epoches,optimizer,save_cycle,save_folder,early_stop = None):
         self.net.to(self.device)
         self.save_folder = save_folder
+        early_stop_counts = 0
         train_record = []
         valid_record = []
         for epoch_i in range(epoches):
@@ -92,6 +93,13 @@ class Trainer(object):
                     print("Epoch %d Batch %d, loss %f, error %f, valid_error %f"%(epoch_i, i_batch, loss,mean_error,mean_valid_error))
                     train_record.append(mean_error)
                     valid_record.append(mean_valid_error)
+                    if early_stop is not None:
+                        if mean_valid_error>min(valid_record):
+                            early_stop_counts +=1
+                        else:
+                            early_stop_counts = 0
+                        if early_stop_counts > early_stop:
+                            return train_record,valid_record
                 optimizer.step()
                 self.global_step +=1
         return train_record,valid_record
