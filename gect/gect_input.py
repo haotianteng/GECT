@@ -9,6 +9,8 @@ FEATURE_ENTRY = 'rpkm'
 LABEL_ENTRY = 'labels'
 FEATURE_DTYPE = np.float32
 EPSILON = 1e-6
+GENE_COL = np.arange(9,164)
+HEADER = 0
 class dataset(data.Dataset):
     """
     scRNA sequencing dataset, contain gene expression and cell type.
@@ -23,11 +25,23 @@ class dataset(data.Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        store_f = pd.HDFStore(store_file,'r')
-        self.feature = np.asarray(store_f[FEATURE_ENTRY],dtype = FEATURE_DTYPE)
-        self.gene_n = self.feature.shape[1]
-        self.transform = transform
-        labels = store_f[LABEL_ENTRY]
+        if store_file.endswith('h5') or store_file.endswith('fast5'):
+            store_f = pd.HDFStore(store_file,'r')
+            self.feature = np.asarray(store_f[FEATURE_ENTRY],dtype = FEATURE_DTYPE)
+            self.gene_n = self.feature.shape[1]
+            self.transform = transform
+            labels = store_f[LABEL_ENTRY]
+            store_f.close()
+        else:
+            if store_file.endswith('.xlsx'):
+                data_all = pd.read_excel(store_file,header = HEADER)
+            elif store_file.endswith('.csv'):
+                data_all = pd.read_csv(store_file,header = HEADER)
+            self.feature = np.asarray(data_all.iloc[:,GENE_COL],dtype = FEATURE_DTYPE)
+            self.gene_n = self.feature.shape[1]
+            labels = np.asarray(data_all['Cell_class'])
+            self.transform = transform
+                    
         self.label_tags = np.unique(labels)
         for tag_idx,tag in enumerate(self.label_tags):
             labels[labels==tag] = tag_idx
@@ -36,7 +50,6 @@ class dataset(data.Dataset):
         self.gene_mean = np.mean(self.feature,axis = 0)
         self.gene_std = np.std(self.feature,axis = 0) + EPSILON
         self.cell_type_n = len(self.label_tags)
-        store_f.close()
     def __len__(self):
         return self.sample_n
 
@@ -49,7 +62,7 @@ class dataset(data.Dataset):
         if self.transform:
             item = self.transform(item)
         return item
-    
+
 class MeanNormalization(object):
     """Nomalization method used to the gene expression level.
     """
@@ -171,15 +184,16 @@ def load_embedding(model_folder):
 
 
 if __name__ == "__main__":
-    root_dir = '/home/heavens/CMU/GECT/data/'
-    train_dat = "train_data.h5"
-    test_dat = "test_data.h5"
+#    root_dir = '/home/heavens/CMU/GECT/data/'
+#    train_dat = "train_data.h5"
+#    test_dat = "test_data.h5"
 #    d1 = dataset(root_dir,transform=transforms.Compose([DeNoise((200,1200)),
 #                                                        WhiteNoise(200,0.1),
 #                                                        Crop(30000),
 #                                                        TransferProb(5),
 #                                                        ToTensor()]))
-    d1 = dataset(root_dir+train_dat,transform=transforms.Compose([MeanNormalization(),
+    data_f = "/home/heavens/CMU/FISH_Clustering/MERFISH2018/naive.csv"
+    d1 = dataset(data_f,transform=transforms.Compose([MeanNormalization(),
                                                             ToTensor()]))
     dataloader = data.DataLoader(d1,batch_size=10,shuffle=True,num_workers=4)
     for i_batch, sample_batched in enumerate(dataloader):
