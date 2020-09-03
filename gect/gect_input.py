@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from torchvision import transforms
 import os
+import pickle
 
 FEATURE_ENTRY = 'rpkm'
 LABEL_ENTRY = 'labels'
@@ -16,32 +17,56 @@ class dataset(data.Dataset):
     scRNA sequencing dataset, contain gene expression and cell type.
     """
     def __init__(self, 
-                 store_file, 
+                 store_file,
                  transform=None):
         """
         Args:
             data_file (string): Path to the pandas hdf5 data storage file(contain
-                      both feature and labels).
+                      feature and label(optional)).
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
         if store_file.endswith('h5') or store_file.endswith('fast5'):
             store_f = pd.HDFStore(store_file,'r')
-            self.feature = np.asarray(store_f[FEATURE_ENTRY],dtype = FEATURE_DTYPE)
-            self.gene_n = self.feature.shape[1]
-            self.transform = transform
-            labels = store_f[LABEL_ENTRY]
+            feature = np.asarray(store_f[FEATURE_ENTRY],dtype = FEATURE_DTYPE)
+            try:
+                labels = store_f[LABEL_ENTRY]
+            except:
+                labels = np.zeros((len(feature)),dtype = int)
             store_f.close()
-        else:
+        elif store_file.endswith('npz'):
+            data = np.load(store_file)
+            feature = data['feature']
+            feature = np.asarray(feature,dtype = FEATURE_DTYPE)
+            try:
+                labels = data['labels']
+            except:
+                labels = np.zeros((len(feature)),dtype = int)
+        elif store_file.endswith('.xlsx') or store_file.endswith('.csv'):
             if store_file.endswith('.xlsx'):
                 data_all = pd.read_excel(store_file,header = HEADER)
             elif store_file.endswith('.csv'):
                 data_all = pd.read_csv(store_file,header = HEADER)
-            self.feature = np.asarray(data_all.iloc[:,GENE_COL],dtype = FEATURE_DTYPE)
-            self.gene_n = self.feature.shape[1]
-            labels = np.asarray(data_all['Cell_class'])
-            self.transform = transform
-                    
+            gene_expression_all = data_all.iloc[:,GENE_COL]
+            nan_cols = np.unique(np.where(np.isnan(gene_expression_all))[1])
+            for nan_col in nan_cols:
+                gene_col = np.delete(GENE_COL,nan_col)
+            feature = np.asarray(data_all.iloc[:,gene_col],dtype = FEATURE_DTYPE)
+            try:
+                labels = np.asarray(data_all['Cell_class'])
+            except:
+                labels = np.zeros((len(feature)),dtype = int)
+        else:#Binary file transfered by FICT
+            with open(store_file,'rb') as f:
+                df = pickle.load(f)
+            feature = np.asarray(df.gene_expression,dtype = FEATURE_DTYPE)
+            print(feature.shape)
+            labels = df.cell_labels
+            if labels is None:
+                labels = np.zeros((len(feature)),dtype = int)
+        self.feature = feature
+        self.gene_n = self.feature.shape[1]
+        self.transform = transform
         self.label_tags = np.unique(labels)
         for tag_idx,tag in enumerate(self.label_tags):
             labels[labels==tag] = tag_idx

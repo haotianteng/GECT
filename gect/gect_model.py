@@ -45,12 +45,20 @@ class GeneEmbedding(nn.Module):
         feature = torch.matmul(feature,self.linear1.weight)
         return feature
     
+    def MAPE_loss(self,predict,target):
+        """The mean absolute percentage error
+        """
+        target_mean = torch.mean(target)
+        if target_mean == 0:
+            target_mean += 1e-6
+        loss = torch.mean(torch.abs(target - predict)) / target_mean
+        return loss
+    
     def loss(self, predict, target):
         """
-        The reconstruction cross-entropy loss
+        The reconstruction loss
         """
         loss = self.l2loss(predict,target)
-        loss = torch.mean(loss)
         return loss
     
     def error(self, predict, target):
@@ -92,9 +100,9 @@ class CellClassifier(nn.Module):
         for layer_idx in np.arange(len(self.hidden_ns)):
             branch1 = self.net['linear'+str(layer_idx)](feature)
             branch1 = tanh(branch1)
-#            branch2 = self.net['skip'+str(layer_idx)](feature)
-#            feature = branch1 + branch2
-            feature = branch1
+            branch2 = self.net['skip'+str(layer_idx)](feature)
+            feature = branch1 + branch2
+#            feature = branch1
         feature = self.net['out_linear'](feature)
         return feature
     

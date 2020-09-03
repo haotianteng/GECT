@@ -65,10 +65,8 @@ def train_wrapper(args):
         eval_dat = args.eval_data
     test_model = os.path.join(args.log_dir,args.model_name)
     batch_size = args.batch_size
-    d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.MeanNormalization(),
-                                                            gi.ToTensor()]))
-    d2 = gi.dataset(eval_dat,transform=transforms.Compose([ gi.MeanNormalization(),
-                                                            gi.ToTensor()]))
+    d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.ToTensor()]))
+    d2 = gi.dataset(eval_dat,transform=transforms.Compose([gi.ToTensor()]))
     assert(d1.feature.shape[1] == d2.feature.shape[1])
     device = args.device
     dataloader = gi.DeviceDataLoader(data.DataLoader(d1,batch_size=batch_size,shuffle=True,num_workers=5),device = device)
@@ -84,7 +82,8 @@ def train_wrapper(args):
                          eval_dataloader = eval_dataloader,
                          device = device,
                          input_drop = args.drop_out)
-    optimizer = torch.optim.SGD(net.parameters(), lr=args.step_rate)
+#    optimizer = torch.optim.SGD(net.parameters(), lr=args.step_rate)
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.step_rate)
     if args.retrain:
         print("Load model from %s"%(test_model))
         t.load(test_model)

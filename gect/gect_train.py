@@ -90,7 +90,7 @@ class Trainer(object):
                     valid_error = self.valid_step(valid_batch)
                     mean_error = np.mean(error)
                     mean_valid_error = np.mean(valid_error)
-                    print("Epoch %d Batch %d, loss %f, error %f, valid_error %f"%(epoch_i, i_batch, loss,mean_error,mean_valid_error))
+                    print("Epoch %d Batch %d, loss %.10f, error %.10f, valid_error %.10f"%(epoch_i, i_batch, loss,mean_error,mean_valid_error))
                     train_record.append(mean_error)
                     valid_record.append(mean_valid_error)
                     if early_stop is not None:
@@ -103,6 +103,7 @@ class Trainer(object):
                 optimizer.step()
                 self.global_step +=1
         return train_record,valid_record
+    
     def train_step(self,batch,get_error = False):
         """Training step
         Input Args:
@@ -113,7 +114,7 @@ class Trainer(object):
         """
         pass
     
-    def valid_steo(self,batch):
+    def valid_step(self,batch):
         pass
     
 class DeviceDataLoader():
