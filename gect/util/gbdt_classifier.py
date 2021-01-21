@@ -21,10 +21,10 @@ def error(predict,target,train_label_tags,test_label_tags):
     error = np.sum(predict!=target)/len(target)
     return error
 
-sub_cell_n = 10
+sub_cell_n = 15
 batch_size = 200
 device = "cuda"
-learning_rate = 4e-3
+learning_rate = 2e-3
 epoches = 100
 global_step = 0
 COUNT_CYCLE = 10
@@ -32,12 +32,12 @@ retrain = False
 root_dir = '/home/heavens/CMU/GECT/'
 data_dir = '/home/heavens/CMU/GECT/data'
 all_dat = os.path.join(data_dir,"all_data.h5")
-train_dat = os.path.join(data_dir,"train_data.h5")
-eval_dat = os.path.join(data_dir,"test_data.h5")
+train_dat = os.path.join(data_dir,"train_part.h5")
+eval_dat = os.path.join(data_dir,"train_rest.h5")
 
 embedding_model = os.path.join(root_dir,"gect/embedding_model/")
 embedding = gi.load_embedding(embedding_model)
-test_model = os.path.join(root_dir,"gect/gbdt_10cell_0/")
+test_model = os.path.join(root_dir,"gect/gbdt_all_intra/")
 d_full = gi.dataset(all_dat,transform=transforms.Compose([gi.ToTensor()]))
 d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.ToTags(d_full.label_tags),
                                                         gi.Embedding(embedding),
@@ -68,7 +68,7 @@ params = {
     'boosting_type': 'gbdt',
     'objective': 'multiclass',
     'num_leaves': 63,
-    'learning_rate': 0.01,
+    'learning_rate': 0.004,
     'feature_fraction': 0.9,
     'bagging_fraction': 0.8,
     'bagging_freq': 5,
@@ -76,7 +76,6 @@ params = {
     'max_depth':-1,
     'min_child_samples': 10,
     'num_class':sub_cell_n,
-    'max_bin':1024
 }
 
 print('Starting training...')
@@ -89,7 +88,11 @@ gbm = lgb.train(params,
 
 print('Saving model...')
 # save model to file
-gbm.save_model('model.txt')
+try:
+    os.mkdir(test_model)
+except:
+    pass
+gbm.save_model(os.path.join(test_model,'model.txt'))
 
 print('Starting predicting...')
 # predict

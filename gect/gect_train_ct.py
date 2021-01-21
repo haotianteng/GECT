@@ -42,8 +42,8 @@ class CellTypingTrainer(Trainer):
                  train_dataloader,
                  net,
                  keep_record = 5,
-                 l1_regularizor = 1e-1,
-                 l2_regularizor = 1e-1,
+                 l1_regularizor = 0.0,
+                 l2_regularizor = 0.0,
                  eval_dataloader = None,
                  device = None):
         super(CellTypingTrainer,self).__init__(train_dataloader=train_dataloader,
@@ -85,27 +85,27 @@ class CellTypingTrainer(Trainer):
             loss += torch.norm(p,2)
         return loss
     
-batch_size = 100
+batch_size = 200
 device = "cuda"
 net_structure = [100,40,20]
-learning_rate = 2e-3
+learning_rate = 4e-4
 epoches = 100
 global_step = 0
 COUNT_CYCLE = 20
 early_stop = 20
-retrain = False
+retrain = True
 root_dir = '/home/heavens/CMU/GECT/'
 data_dir = '/home/heavens/CMU/GECT/data'
 all_dat = os.path.join(data_dir,"all_data.h5")
-train_dat = os.path.join(data_dir,"train_part_cell.h5")
-eval_dat = os.path.join(data_dir,"test_part_cell.h5")
+train_dat = os.path.join(data_dir,"train_part.h5")
+eval_dat = os.path.join(data_dir,"train_rest.h5")
 
 #train_dat = os.path.join(data_dir,"train_part.h5")
 #eval_dat = os.path.join(data_dir,"train_rest.h5")
 
 embedding_model = os.path.join(root_dir,"gect/embedding_model/")
 embedding = load_embedding(embedding_model)
-test_model = os.path.join(root_dir,"gect/cell_classifier_10cell_2/")
+test_model = os.path.join(root_dir,"gect/cell_classifier_allcell_intra_2/")
 d_full = gi.dataset(all_dat,transform=transforms.Compose([gi.ToTensor()]))
 d1 = gi.dataset(train_dat,transform=transforms.Compose([gi.ToTags(d_full.label_tags),
                                                         gi.Embedding(embedding),
@@ -147,7 +147,10 @@ plt.axvline(train_step[np.argmin(valid_record)],color = 'green')
 plt.text(train_step[np.argmin(valid_record)]+100,min(valid_record)+0.2,'Best model',fontsize = 20)
 plt.title("Trian-valid error of neural network on %d cell types"%(len(d1.label_tags)),fontsize = 20)
 axes.legend()
+plt.xlabel('Train steps',fontsize = 20)
+plt.ylabel('Error rate',fontsize =20)
 trainer.save(test_model)
+fig_h.savefig(os.path.join(test_model,'error_figure.svg'))
 
 
 ### Logistic Regression test:

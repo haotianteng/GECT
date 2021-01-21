@@ -33,7 +33,7 @@ def transfer_label_tags(y,label_tags_from,label_tags_to):
 
 sub_cell_n = 10
 
-store_file = "/home/heavens/CMU/Semester1/Machine_Learning_10-701/Project/ml_10701_ps5_data/test_data.h5"
+store_file = "/home/heavens/CMU/Semester1/Machine_Learning_10-701/Project/ml_10701_ps5_data/all_data.h5"
 partial_file = "/home/heavens/CMU/Semester1/Machine_Learning_10-701/Project/ml_10701_ps5_data/test_part_cell.h5"
 store = pd.HDFStore(store_file,'r')
 feature_matrix_dataframe = store['rpkm']
