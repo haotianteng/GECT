@@ -59,7 +59,8 @@ class EmbeddingTrainer(Trainer):
     
 def train_wrapper(args):
     train_dat = args.train_data
-    torch.set_num_threads(args.threads)
+    if args.threads:
+        torch.set_num_threads(args.threads)
     if args.eval_data is None:
         eval_dat = train_dat
     else:
@@ -166,7 +167,7 @@ if __name__ == "__main__":
    parser.add_arugment(
            '--threads',
            help = "The number of threads that used.",
-           default = 5)
+           default = None)
    
    parser.set_defaults(retrain=False)
    args = parser.parse_args()
